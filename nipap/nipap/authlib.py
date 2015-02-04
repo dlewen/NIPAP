@@ -153,6 +153,16 @@ class AuthFactory:
         for key in rem:
             del(self._auth_cache[key])
 
+
+        try:
+            username = username.encode('utf-8','replace')
+        except UnicodeDecodeError:
+            username = username.decode('utf-8','replace').encode('utf-8','replace')
+        try:
+            password = password.encode('utf-8','replace')
+        except UnicodeEncodeError, UnicodeDecodeError:
+            password = password.decode('utf-8','replace').encode('utf-8','replace')
+
         user_authbackend = username.rsplit('@', 1)
     
         # Find out what auth backend to use.
@@ -340,7 +350,12 @@ class LdapAuth(BaseAuth):
 
         try:
             res = self._ldap_conn.search_s(self._ldap_basedn, ldap.SCOPE_SUBTREE, self._ldap_search.format(ldap.dn.escape_dn_chars(self.username)), ['cn','memberOf'])
-            self.full_name = res[0][1]['cn'][0]
+            try:
+                self.full_name = res[0][1]['cn'][0].encode('utf-8','replace')
+            except UnicodeDecodeError:
+                self.full_name = res[0][1]['cn'][0].decode('utf-8','replace').encode('utf-8','replace')
+            except UnicodeEncodeError:
+                self.full_name = res[0][1]['cn'][0].decode('ascii','ignore')
             # check for ro_group membership if ro_group is configured
             if self._ldap_ro_group:
                 if self._ldap_ro_group in res[0][1]['memberOf']:
